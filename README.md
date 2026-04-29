@@ -1,6 +1,38 @@
 # Telemetry Iceberg Adapter
 
-Rust service for accepting pluggable telemetry inputs, durably staging requests in a WAL, converting them to Arrow/Parquet, and committing staged data files to Iceberg tables through a configurable catalog.
+Receives live telemetry, writes it to durable Parquet files, and commits those files to an Apache Iceberg table — making logs, traces, and metrics queryable via Athena, Spark, or any Iceberg-compatible engine within seconds of ingestion.
+
+```
+┌─────────────────────────────┐        ┌────────────────────────────────┐
+│          INPUTS             │        │           OUTPUTS              │
+│                             │        │                                │
+│  OTLP/HTTP  logs, traces    │        │  Parquet files  (local or S3)  │
+│  OTLP/gRPC  logs, traces    │──────▶ │  Iceberg tables (Glue / REST)  │
+│  NDJSON     logs            │  WAL   │  Queryable via Athena / Spark  │
+│  Prometheus remote-write    │        │                                │
+└─────────────────────────────┘        └────────────────────────────────┘
+```
+
+**Inputs** accepted on the wire:
+
+| Protocol | Endpoint | Signal |
+|----------|----------|--------|
+| OTLP/HTTP protobuf or JSON | `POST /v1/logs` | Logs |
+| OTLP/HTTP protobuf or JSON | `POST /v1/traces` | Traces |
+| OTLP/gRPC | `0.0.0.0:4317` | Logs, Traces |
+| NDJSON (one JSON object per line) | `POST /v1/logs/ndjson` | Logs |
+| Prometheus remote write | `POST /api/v1/write` | Metrics |
+
+**Outputs** written per signal:
+
+| Signal | Iceberg table | Key columns |
+|--------|---------------|-------------|
+| Logs (`otel` profile) | `logs` | `timestamp_nanos`, `severity_text`, `body`, `service_name`, `resource_attributes`, `log_attributes` |
+| Logs (`generic_event` profile) | configurable | `timestamp_nanos`, `message`, `severity`, `hostname`, `attributes` |
+| Traces | `traces` | `trace_id`, `span_id`, `name`, `duration_nanos`, `service_name`, `span_attributes` |
+| Metrics | `metrics` | `metric_name`, `timestamp_millis`, `value`, `labels` |
+
+Every accepted request is durably written to a WAL before `200 OK` is returned. Background workers drain the WAL into Parquet batches and commit them to the configured Iceberg catalog with OCC retry.
 
 ## Current Scope
 
