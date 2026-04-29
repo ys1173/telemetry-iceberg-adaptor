@@ -1,0 +1,94 @@
+[server]
+http_bind = "0.0.0.0:4318"
+grpc_bind = "0.0.0.0:4317"
+# instance_id = "adapter-1"
+
+[wal]
+backend = "local"
+dir = "./data/wal"
+
+[wal.kafka]
+# Required when wal.backend = "kafka"
+bootstrap_servers = "localhost:9092"
+group_id = "telemetry-iceberg-adapter"
+records_topic = "telemetry-iceberg-wal-records"
+manifests_topic = "telemetry-iceberg-wal-manifests"
+produce_timeout_secs = 30
+
+[storage]
+parquet_dir = "./data/parquet"
+# When set, each Parquet file is uploaded to S3 after the local write and the
+# S3 URI is what gets committed to the Iceberg catalog.  Required when using
+# catalog.type = "glue" or "rest" so that Athena / Spark can read the files.
+# parquet_s3_base = "s3://my-bucket/telemetry-iceberg"
+
+[limits]
+max_http_body_bytes = 16777216
+max_pending_wal_bytes = 536870912
+
+[batch]
+max_rows = 100000
+max_bytes = 134217728
+max_age_secs = 60
+
+[pipeline]
+# Number of parallel log batch/write workers. Iceberg commits remain serialized.
+# Increase for high-rate log streams after benchmarking WAL/S3/catalog capacity.
+log_workers = 1
+
+[commit]
+retry_attempts = 8
+retry_initial_backoff_ms = 200
+retry_max_backoff_secs = 10
+
+[catalog]
+# Supported values: "noop", "glue", "rest".
+# "rest" is the path for Iceberg REST catalogs such as Lakekeeper or Polaris.
+# "hive" is reserved but not wired yet.
+type = "noop"
+namespace = "default"
+# warehouse = "s3://my-iceberg-warehouse"
+
+[catalog.rest]
+# Required when catalog.type = "rest"
+# uri = "http://localhost:8181"
+# credential = "client-id:client-secret"
+# token = "bearer-token"
+# oauth2_server_uri = "http://localhost:8181/oauth/tokens"
+# prefix = "my-prefix"
+# scope = "catalog"
+
+[tables.logs]
+name = "logs"
+# Supported values:
+# - "otel": OpenTelemetry-style logs with body, severity_text, resource_attributes, log_attributes.
+# - "generic_event": minimal event schema with timestamp_nanos, observed_timestamp_nanos,
+#   message, severity, hostname, attributes.
+schema_profile = "otel"
+# Optional S3 key prefix under storage.parquet_s3_base. Defaults to the table name.
+# s3_prefix = "default/logs"
+
+# Promote parsed JSON/log attributes into physical Iceberg columns.
+# Supported source forms:
+# - "$.src_ip" or "log_attributes.src_ip"
+# - "resource_attributes.service.name"
+# - built-in fields such as "body", "severity_text", "service_name"
+# Supported data_type values: "string", "int", "long", "double".
+# Promoted log/resource attribute keys are removed from the remaining map column.
+# [[tables.logs.projections]]
+# column = "src_ip"
+# source = "$.src_ip"
+# data_type = "string"
+#
+# [[tables.logs.projections]]
+# column = "bytes"
+# source = "$.bytes"
+# data_type = "long"
+
+[tables.metrics]
+name = "metrics"
+# s3_prefix = "default/metrics"
+
+[tables.traces]
+name = "traces"
+# s3_prefix = "default/traces"
