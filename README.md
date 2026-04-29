@@ -1,6 +1,6 @@
 # Telemetry Iceberg Adapter
 
-Receives live telemetry, writes it to durable Parquet files, and commits those files to an Apache Iceberg table — making logs, traces, and metrics queryable via Athena, Snowflake, Trino, or Spark within seconds of ingestion.
+Receives live telemetry, writes it to durable Parquet files, and commits those files to an Apache Iceberg table — making logs, traces, and metrics queryable via Athena, Snowflake, Trino, Spark, or DuckDB within seconds of ingestion.
 
 ```
 ┌─────────────────────────────┐        ┌──────────────────────────────────────┐
@@ -9,7 +9,7 @@ Receives live telemetry, writes it to durable Parquet files, and commits those f
 │  OTLP/HTTP  logs, traces    │        │  Parquet files  (local or S3)        │
 │  OTLP/gRPC  logs, traces    │──────▶ │  Iceberg tables (Glue / REST)        │
 │  NDJSON     logs            │  WAL   │  Queryable via Athena, Snowflake,    │
-│  Prometheus remote-write    │        │  Trino, or Spark                     │
+│  Prometheus remote-write    │        │  Trino, Spark, or DuckDB             │
 └─────────────────────────────┘        └──────────────────────────────────────┘
 ```
 
