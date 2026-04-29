@@ -1,4 +1,4 @@
-# Telemetry Iceberg Adapter
+# Telemetry Iceberg Adaptor
 
 Receives live telemetry, writes it to durable Parquet files, and commits those files to an Apache Iceberg table — making logs, traces, and metrics queryable via Athena, Snowflake, Trino, Spark, or DuckDB within seconds of ingestion.
 
@@ -56,10 +56,10 @@ Every accepted request is durably written to a WAL before `200 OK` is returned. 
 Configuration can come from a TOML file and environment variables. The loader uses this order:
 
 1. `OTLP_ADAPTER_CONFIG=/path/to/config.toml`, if set.
-2. `./telemetry-iceberg-adapter.toml`, if present.
+2. `./telemetry-iceberg-adaptor.toml`, if present.
 3. Built-in defaults.
 
-Environment variables override config-file values. See `telemetry-iceberg-adapter.example.toml` for a complete file.
+Environment variables override config-file values. See `telemetry-iceberg-adaptor.example.toml` for a complete file.
 
 | Variable | Default | Description |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ Environment variables override config-file values. See `telemetry-iceberg-adapte
 | `OTLP_ADAPTER_WAL_DIR` | `./data/wal` | Durable WAL directory. |
 | `OTLP_ADAPTER_WAL_BACKEND` | `local` | WAL backend: `local` or `kafka`. |
 | `OTLP_ADAPTER_KAFKA_BOOTSTRAP_SERVERS` | unset | Kafka bootstrap servers. Required when `OTLP_ADAPTER_WAL_BACKEND=kafka`. |
-| `OTLP_ADAPTER_KAFKA_GROUP_ID` | `telemetry-iceberg-adapter` | Kafka consumer group prefix for WAL replay. |
+| `OTLP_ADAPTER_KAFKA_GROUP_ID` | `telemetry-iceberg-adaptor` | Kafka consumer group prefix for WAL replay. |
 | `OTLP_ADAPTER_KAFKA_RECORDS_TOPIC` | `telemetry-iceberg-wal-records` | Topic for accepted telemetry request records. |
 | `OTLP_ADAPTER_KAFKA_MANIFESTS_TOPIC` | `telemetry-iceberg-wal-manifests` | Topic for Parquet commit manifests. |
 | `OTLP_ADAPTER_KAFKA_PRODUCE_TIMEOUT_SECS` | `30` | Timeout for producing WAL records/manifests. |
@@ -110,7 +110,7 @@ Supported catalog backends:
 - `rest`: Iceberg REST catalog via `iceberg-catalog-rest`, suitable for Lakekeeper, Polaris, and compatible REST catalogs.
 - `hive`: reserved in config, but not wired yet because this project does not currently include a Hive catalog implementation.
 
-For `glue` and `rest`, the adapter validates the configured logs, metrics, and traces Iceberg tables at startup. Each table must already exist in the configured namespace, and its columns must be compatible with the adapter schemas below. `noop` mode skips this validation.
+For `glue` and `rest`, the adaptor validates the configured logs, metrics, and traces Iceberg tables at startup. Each table must already exist in the configured namespace, and its columns must be compatible with the adaptor schemas below. `noop` mode skips this validation.
 
 Log tables can promote selected parsed JSON/log attributes into physical Iceberg columns while leaving all other fields in `log_attributes`:
 
@@ -141,7 +141,7 @@ Supported projection sources are `$.field`, `log_attributes.field`, `resource_at
 Example:
 
 ```sh
-cp telemetry-iceberg-adapter.example.toml telemetry-iceberg-adapter.toml
+cp telemetry-iceberg-adaptor.example.toml telemetry-iceberg-adaptor.toml
 cargo run
 ```
 
@@ -246,11 +246,11 @@ The traces table currently uses:
 
 ## AWS Smoke Test
 
-For a first AWS validation, use Athena over uploaded Parquet files. This is simpler than Lambda and validates the adapter's decode, Arrow, Parquet, S3, Glue table, and query schema path.
+For a first AWS validation, use Athena over uploaded Parquet files. This is simpler than Lambda and validates the adaptor's decode, Arrow, Parquet, S3, Glue table, and query schema path.
 
-Current note: `parquet_dir` is still a local staging directory. For Glue/REST Iceberg mode, set `storage.parquet_s3_base` or `OTLP_ADAPTER_PARQUET_S3_BASE` so the adapter uploads staged Parquet files to S3 before committing them.
+Current note: `parquet_dir` is still a local staging directory. For Glue/REST Iceberg mode, set `storage.parquet_s3_base` or `OTLP_ADAPTER_PARQUET_S3_BASE` so the adaptor uploads staged Parquet files to S3 before committing them.
 
-Minimal config for the adapter:
+Minimal config for the adaptor:
 
 ```toml
 [storage]
@@ -263,7 +263,7 @@ max_age_secs = 5
 type = "noop"
 ```
 
-Run the adapter and your log generator, or let the script send a few NDJSON logs:
+Run the adaptor and your log generator, or let the script send a few NDJSON logs:
 
 ```sh
 pip install boto3 requests
@@ -275,7 +275,7 @@ In another shell:
 ```sh
 python scripts/aws_log_smoke_test.py \
   --bucket my-telemetry-test-bucket \
-  --prefix smoke/telemetry-iceberg-adapter \
+  --prefix smoke/telemetry-iceberg-adaptor \
   --athena-output s3://my-telemetry-test-bucket/athena-results/ \
   --region us-east-1
 ```
@@ -286,7 +286,7 @@ Useful IAM permissions for the smoke test are `s3:PutObject`, `s3:GetObject`, `s
 
 ## Delivery Semantics
 
-The adapter is at-least-once:
+The adaptor is at-least-once:
 
 1. Input request is decoded and validated.
 2. The decompressed OTLP payload is written to the configured WAL backend.
