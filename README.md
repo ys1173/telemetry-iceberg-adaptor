@@ -2,6 +2,8 @@
 
 Receives live telemetry, writes it to durable Parquet files, and commits those files to an Apache Iceberg table — making logs, traces, and metrics queryable via Athena, Snowflake, Trino, Spark, or DuckDB within seconds of ingestion.
 
+This project is complementary to [duckdb-iceberg-mcp](https://github.com/ys1173/duckdb-iceberg-mcp), which exposes those Iceberg tables to MCP-enabled AI clients for interactive querying.
+
 ```
 ┌─────────────────────────────┐        ┌──────────────────────────────────────┐
 │          INPUTS             │        │              OUTPUTS                 │
