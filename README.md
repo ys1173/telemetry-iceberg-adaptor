@@ -1,6 +1,7 @@
 # Telemetry Iceberg Adapter
 
 Receives live telemetry, writes it to durable Parquet files, and commits those files to an Apache Iceberg table — making logs, traces, and metrics queryable via Athena, Snowflake, Trino, Spark, or DuckDB within seconds of ingestion.
+Designed for very high-throughput telemetry ingestion with low resource overhead directly into data lakes such as Amazon S3, it is implemented in Rust for predictable performance and efficiency.
 
 This project is complementary to [duckdb-iceberg-mcp](https://github.com/ys1173/duckdb-iceberg-mcp), which exposes those Iceberg tables to MCP-enabled AI clients for interactive querying.
 
